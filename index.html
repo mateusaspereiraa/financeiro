@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Finance - Gestão Financeira & Open Finance</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0B0F17',
+                            800: '#111827',
+                            700: '#1F2937',
+                            600: '#374151'
+                        },
+                        neon: {
+                            emerald: '#10B981',
+                            violet: '#8B5CF6',
+                            cyan: '#06B6D4',
+                            rose: '#F43F5E',
+                            amber: '#F59E0B'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PapaParse (CSV) CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0F17;
+            color: #F3F4F6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4B5563;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        /* Neon Glows */
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+        .glow-violet {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+        /* Animations */
+        @keyframes syncRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-sync {
+            animation: syncRotate 1s linear infinite;
+        }
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row antialiased selection:bg-neon-emerald selection:text-black">
+
+    <!-- SIDEBAR NAV -->
+    <aside class="w-full md:w-64 bg-dark-800 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col justify-between shrink-0 z-20">
+        <div>
+            <!-- LOGO -->
+            <div class="p-5 flex items-center gap-3 border-b border-gray-800/60">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-dark-900 font-bold text-xl shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid me-0.5 fa-wallet"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-white via-gray-200 to-emerald-400 bg-clip-text text-transparent">Lumina</h1>
+                    <p class="text-xs text-gray-400">Finance & Open Bank</p>
+                </div>
+            </div>
+
+            <!-- NAVIGATION ITEMS -->
+            <nav class="p-4 space-y-1.5">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-pie text-lg w-5 text-center"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                    <i class="fa-solid fa-list-check text-lg w-5 text-center"></i>
+                    <span>Transações</span>
+                </button>
+                <button onclick="switchTab('open-finance')" id="nav-open-finance" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                    <i class="fa-solid fa-building-columns text-lg w-5 text-center"></i>
+                    <span>Open Finance & Import</span>
+                </button>
+                <button onclick="switchTab('goals')" id="nav-goals" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                    <i class="fa-solid fa-bullseye text-lg w-5 text-center"></i>
+                    <span>Metas & Orçamento</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- USER PROFILE & QUICK ACTION -->
+        <div class="p-4 border-t border-gray-800/60">
+            <button onclick="openTransactionModal()" class="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 text-dark-900 hover:opacity-95 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 mb-4">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nova Transação</span>
+            </button>
+            <div class="flex items-center gap-3 px-2 py-1">
+                <div class="w-9 h-9 rounded-full bg-violet-600/30 border border-violet-500/40 flex items-center justify-center text-violet-300 font-bold">
+                    JS
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-medium text-gray-200 truncate">Juliana Silva</p>
+                    <p class="text-xs text-gray-500 truncate">Conta Pro Sync</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+
+        <!-- HEADER TOP BAR -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-800">
+            <div>
+                <h2 id="page-title" class="text-2xl font-bold tracking-tight text-white">Dashboard Financeiro</h2>
+                <p id="page-subtitle" class="text-sm text-gray-400">Visão consolidada de saldos, investimentos e hábitos de consumo.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Open Finance Ativo
+                </span>
+                <button onclick="exportData('csv')" class="px-3 py-1.5 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition" title="Exportar para CSV">
+                    <i class="fa-solid fa-file-csv mr-1 text-emerald-400"></i> Exportar CSV
+                </button>
+                <button onclick="exportData('json')" class="px-3 py-1.5 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition" title="Exportar para JSON">
+                    <i class="fa-solid fa-code mr-1 text-cyan-400"></i> Exportar JSON
+                </button>
+            </div>
+        </header>
+
+        <!-- NOTIFICATION BANNER / ALERT CONTAINER -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- SUMMARY CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1 -->
+                <div class="glass-card p-5 rounded-2xl glow-emerald">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Saldo Total</span>
+                        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                            <i class="fa-solid fa-wallet text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p id="kpi-balance" class="text-2xl font-bold text-white">R$ 0,00</p>
+                        <p class="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-trend-up"></i> +8.4% este mês
+                        </p>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Receitas</span>
+                        <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400">
+                            <i class="fa-solid fa-arrow-down-left text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p id="kpi-income" class="text-2xl font-bold text-white">R$ 0,00</p>
+                        <p class="text-xs text-gray-400 mt-1">Entradas acumuladas</p>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Despesas</span>
+                        <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400">
+                            <i class="fa-solid fa-arrow-up-right text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p id="kpi-expenses" class="text-2xl font-bold text-white">R$ 0,00</p>
+                        <p class="text-xs text-gray-400 mt-1">Saídas acumuladas</p>
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="glass-card p-5 rounded-2xl glow-violet">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Investimentos</span>
+                        <div class="p-2.5 rounded-xl bg-violet-500/10 text-violet-400">
+                            <i class="fa-solid fa-chart-line text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p id="kpi-investments" class="text-2xl font-bold text-white">R$ 28.450,00</p>
+                        <p class="text-xs text-violet-400 mt-1">Rendimento médio +1.15%/mês</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS ROW 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Monthly Flow Chart -->
+                <div class="glass-card p-5 rounded-2xl lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="font-bold text-base text-white">Fluxo de Caixa Mensal</h3>
+                            <p class="text-xs text-gray-400">Comparativo de Entradas e Saídas ao longo do tempo</p>
+                        </div>
+                        <span class="text-xs bg-gray-800 border border-gray-700 text-gray-300 px-3 py-1 rounded-lg">2026</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chartCashFlow"></canvas>
+                    </div>
+                </div>
+
+                <!-- Expenses Category Chart -->
+                <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-base text-white">Despesas por Categoria</h3>
+                        <p class="text-xs text-gray-400">Distribuição proporcional dos gastos</p>
+                    </div>
+                    <div class="relative h-64 w-full flex items-center justify-center">
+                        <canvas id="chartCategories"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS ROW 2 & RECENT ACTIVITY -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Wealth Evolution Chart -->
+                <div class="glass-card p-5 rounded-2xl lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="font-bold text-base text-white">Evolução Patrimonial</h3>
+                            <p class="text-xs text-gray-400">Crescimento do patrimônio líquido consolidado</p>
+                        </div>
+                    </div>
+                    <div class="relative h-60 w-full">
+                        <canvas id="chartPatrimony"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Mini Card -->
+                <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-base text-white">Últimas Lançamentos</h3>
+                        <button onclick="switchTab('transactions')" class="text-xs text-emerald-400 hover:underline">Ver todas</button>
+                    </div>
+                    <div id="recent-transactions-list" class="space-y-3 overflow-y-auto max-h-56 pr-1">
+                        <!-- Dynamic Item content -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: TRANSACTIONS -->
+        <section id="tab-transactions" class="tab-content space-y-6">
+            <!-- FILTERS & CONTROLS -->
+            <div class="glass-card p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-500 text-sm"></i>
+                    <input type="text" id="tx-search" oninput="applyTransactionFilters()" placeholder="Buscar por descrição ou categoria..." class="w-full bg-dark-900 border border-gray-700/80 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500 transition">
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Filter Type -->
+                    <select id="tx-filter-type" onchange="applyTransactionFilters()" class="bg-dark-900 border border-gray-700/80 rounded-xl px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-emerald-500">
+                        <option value="ALL">Todos os Tipos</option>
+                        <option value="INCOME">Receitas</option>
+                        <option value="EXPENSE">Despesas</option>
+                    </select>
+
+                    <!-- Filter Category -->
+                    <select id="tx-filter-category" onchange="applyTransactionFilters()" class="bg-dark-900 border border-gray-700/80 rounded-xl px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-emerald-500">
+                        <option value="ALL">Todas Categorias</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Salário">Salário</option>
+                        <option value="Investimentos">Investimentos</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+
+                    <button onclick="openTransactionModal()" class="ml-auto bg-emerald-500 hover:bg-emerald-600 text-dark-900 font-semibold px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Novo Lançamento
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE OF TRANSACTIONS -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-xs uppercase font-semibold text-gray-400 bg-gray-900/40">
+                                <th class="p-4">Data</th>
+                                <th class="p-4">Descrição</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4">Tipo</th>
+                                <th class="p-4 text-right">Valor</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-table-body" class="divide-y divide-gray-800/60 text-sm">
+                            <!-- JS Injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="tx-empty-state" class="hidden p-8 text-center text-gray-500">
+                    <i class="fa-solid fa-box-open text-3xl mb-2"></i>
+                    <p>Nenhuma transação encontrada para os filtros aplicados.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: OPEN FINANCE & DATA INTEGRATION -->
+        <section id="tab-open-finance" class="tab-content space-y-6">
+            <!-- OPEN FINANCE CONNECTIONS HUB -->
+            <div class="glass-card p-6 rounded-2xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                            Conexões Open Finance
+                        </h3>
+                        <p class="text-xs text-gray-400">Conecte suas contas bancárias para sincronização automática de extratos e saldos com criptografia de ponta a ponta.</p>
+                    </div>
+                    <button onclick="simulateSyncAll()" class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                        <i id="sync-all-icon" class="fa-solid fa-rotate"></i> Sincronizar Todos
+                    </button>
+                </div>
+
+                <!-- BANKS GRID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2" id="banks-grid">
+                    <!-- Bank Item JS Dynamic Render -->
+                </div>
+            </div>
+
+            <!-- SHEET / CSV IMPORT & EXPORT MODULE -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- IMPORT CARD -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-file-import text-cyan-400"></i>
+                            Importar Planilha (CSV / Excel)
+                        </h3>
+                        <p class="text-xs text-gray-400 mb-4">Carregue arquivos .csv, .xlsx ou .xls para inserir transações em lote diretamente no sistema.</p>
+                        
+                        <!-- Drag & Drop Zone -->
+                        <div id="drop-zone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-gray-700 hover:border-cyan-500 bg-dark-900/50 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-cyan-400 mb-1"></i>
+                            <p class="text-sm font-medium text-gray-300">Clique para selecionar ou arraste o arquivo aqui</p>
+                            <p class="text-xs text-gray-500">Formatos aceitos: .CSV, .XLS, .XLSX</p>
+                            <input type="file" id="file-input" class="hidden" accept=".csv, .xlsx, .xls" onchange="handleFileSelect(event)">
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW & MAPPING AREA (Hidden until file selected) -->
+                    <div id="import-preview-container" class="hidden space-y-3 pt-2">
+                        <div class="p-3 bg-dark-900 rounded-xl border border-gray-800 text-xs space-y-2">
+                            <p class="font-semibold text-emerald-400 flex items-center justify-between">
+                                <span><i class="fa-solid fa-circle-check"></i> Arquivo Lido com Sucesso</span>
+                                <span id="preview-row-count" class="text-gray-400">0 linhas</span>
+                            </p>
+                            <p class="text-gray-400">Amostra da primeira linha encontrada:</p>
+                            <div id="preview-sample" class="bg-gray-800/80 p-2 rounded text-gray-300 font-mono text-[11px] overflow-x-auto"></div>
+                        </div>
+
+                        <button onclick="confirmImportData()" class="w-full py-2.5 bg-cyan-500 hover:bg-cyan-600 text-dark-900 font-bold rounded-xl text-sm transition shadow-lg shadow-cyan-500/20">
+                            Confirmar Importação de Transações
+                        </button>
+                    </div>
+                </div>
+
+                <!-- EXPORT & BACKUP CARD -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-database text-violet-400"></i>
+                            Exportação & Backup de Dados
+                        </h3>
+                        <p class="text-xs text-gray-400 mb-4">Mantenha a custódia total dos seus dados financeiros exportando quando desejar.</p>
+
+                        <div class="space-y-3">
+                            <div class="p-4 bg-dark-900/60 rounded-xl border border-gray-800 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-200">Relatório Tabela CSV</p>
+                                    <p class="text-xs text-gray-500">Compatível com Excel, Google Sheets, Numbers</p>
+                                </div>
+                                <button onclick="exportData('csv')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 font-medium rounded-lg text-xs border border-gray-700 transition">
+                                    Baixar CSV
+                                </button>
+                            </div>
+
+                            <div class="p-4 bg-dark-900/60 rounded-xl border border-gray-800 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-200">Backup Estruturado JSON</p>
+                                    <p class="text-xs text-gray-500">Para desenvolvedores ou restauro em outros sistemas</p>
+                                </div>
+                                <button onclick="exportData('json')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-cyan-400 font-medium rounded-lg text-xs border border-gray-700 transition">
+                                    Baixar JSON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-violet-500/10 border border-violet-500/20 rounded-xl text-xs text-violet-300">
+                        <i class="fa-solid fa-lock mr-1"></i> Seus dados ficam salvos localmente na memória do seu navegador.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: GOALS & BUDGETS -->
+        <section id="tab-goals" class="tab-content space-y-6">
+            <!-- GOALS MODULE -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Metas de Economia</h3>
+                        <p class="text-xs text-gray-400">Acompanhe seus objetivos patrimoniais de curto e longo prazo.</p>
+                    </div>
+                    <button onclick="alert('Recurso de criar nova meta simplificado no protótipo!')" class="px-3 py-1.5 bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-xs font-semibold transition">
+                        + Nova Meta
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="goals-list">
+                    <!-- Dynamic Goals Render -->
+                </div>
+            </div>
+
+            <!-- BUDGET LIMITS PER CATEGORY MODULE -->
+            <div class="glass-card p-6 rounded-2xl space-y-4">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Limites Orçamentários Mensais</h3>
+                    <p class="text-xs text-gray-400">Defina tetos de gastos por categoria e previna estouros de orçamento com alertas visuais.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="budgets-list">
+                    <!-- Dynamic Budgets Render -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL FOR NEW TRANSACTION -->
+    <div id="modal-transaction" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-dark-800 border border-gray-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeTransactionModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white mb-4">Adicionar Nova Transação</h3>
+
+            <form id="tx-form" onsubmit="saveTransaction(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Descrição</label>
+                    <input type="text" id="form-desc" required placeholder="Ex: Mercado, Salário, Internet" class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" id="form-amount" required placeholder="0.00" class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Tipo</label>
+                        <select id="form-type" required class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                            <option value="EXPENSE">Despesa</option>
+                            <option value="INCOME">Receita</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Categoria</label>
+                        <select id="form-category" required class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                            <option value="Moradia">Moradia</option>
+                            <option value="Alimentação">Alimentação</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Lazer">Lazer</option>
+                            <option value="Saúde">Saúde</option>
+                            <option value="Salário">Salário</option>
+                            <option value="Investimentos">Investimentos</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Data</label>
+                        <input type="date" id="form-date" required class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-xl text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-dark-900">Salvar Transação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & APP CORE -->
+    <script>
+        // ==========================================
+        // INITIAL MOCK DATA
+        // ==========================================
+        let mockTransactions = [
+            { id: '1', date: '2026-10-18', description: 'Salário Mensal', category: 'Salário', type: 'INCOME', amount: 8500.00 },
+            { id: '2', date: '2026-10-17', description: 'Supermercado Carrefour', category: 'Alimentação', type: 'EXPENSE', amount: 642.50 },
+            { id: '3', date: '2026-10-15', description: 'Aluguel & Condomínio', category: 'Moradia', type: 'EXPENSE', amount: 2200.00 },
+            { id: '4', date: '2026-10-12', description: 'Posto Shell Combustível', category: 'Transporte', type: 'EXPENSE', amount: 220.00 },
+            { id: '5', date: '2026-10-10', description: 'Cinema & Jantar', category: 'Lazer', type: 'EXPENSE', amount: 185.00 },
+            { id: '6', date: '2026-10-08', description: 'Aporte Tesouro Direto', category: 'Investimentos', type: 'EXPENSE', amount: 1500.00 },
+            { id: '7', date: '2026-10-05', description: 'Consulta Médica', category: 'Saúde', type: 'EXPENSE', amount: 250.00 },
+            { id: '8', date: '2026-10-02', description: 'Projeto Freelance', category: 'Salário', type: 'INCOME', amount: 1200.00 }
+        ];
+
+        let mockBanks = [
+            { id: 'nubank', name: 'Nubank', logo: 'fa-square-n', color: 'text-purple-400', connected: true, lastSync: 'Há 5 min' },
+            { id: 'itau', name: 'Itaú Unibanco', logo: 'fa-building-columns', color: 'text-orange-400', connected: true, lastSync: 'Há 12 min' },
+            { id: 'bradesco', name: 'Bradesco', logo: 'fa-shield-halved', color: 'text-red-400', connected: false, lastSync: 'Nunca' },
+            { id: 'santander', name: 'Santander', logo: 'fa-fire', color: 'text-rose-500', connected: false, lastSync: 'Nunca' },
+            { id: 'bb', name: 'Banco do Brasil', logo: 'fa-landmark', color: 'text-yellow-400', connected: true, lastSync: 'Há 1 hora' },
+            { id: 'inter', name: 'Banco Inter', logo: 'fa-bolt', color: 'text-orange-500', connected: false, lastSync: 'Nunca' },
+            { id: 'c6', name: 'C6 Bank', logo: 'fa-cube', color: 'text-gray-300', connected: false, lastSync: 'Nunca' }
+        ];
+
+        let mockGoals = [
+            { id: '1', title: 'Reserva de Emergência', target: 30000, current: 22500, icon: 'fa-shield-heart', color: 'emerald' },
+            { id: '2', title: 'Viagem Japão 2027', target: 18000, current: 7200, icon: 'fa-plane', color: 'cyan' },
+            { id: '3', title: 'Troca de Carro', target: 45000, current: 15000, icon: 'fa-car', color: 'violet' }
+        ];
+
+        let mockBudgets = [
+            { category: 'Moradia', limit: 2500, spent: 2200 },
+            { category: 'Alimentação', limit: 1200, spent: 1080 },
+            { category: 'Lazer', limit: 500, spent: 580 }, // Estourado
+            { category: 'Transporte', limit: 600, spent: 220 }
+        ];
+
+        let parsedImportData = null;
+
+        // CHART REFERENCES
+        let chartCashFlowInstance = null;
+        let chartCategoriesInstance = null;
+        let chartPatrimonyInstance = null;
+
+        // ==========================================
+        // INIT APPLICATION ON LOAD
+        // ==========================================
+        window.onload = function() {
+            // Set default date picker to today
+            document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+            
+            renderAll();
+            initCharts();
+        };
+
+        function renderAll() {
+            renderKPIs();
+            renderTransactionsTable();
+            renderRecentTransactions();
+            renderBanksGrid();
+            renderGoals();
+            renderBudgets();
+        }
+
+        // ==========================================
+        // TAB SWITCHING SYSTEM
+        // ==========================================
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Reset Nav Button Styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50';
+            });
+
+            // Activate Target Tab
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            // Highlight Active Nav Button
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            }
+
+            // Update Header Titles
+            const titleMap = {
+                'dashboard': { title: 'Dashboard Financeiro', sub: 'Visão consolidada de saldos, investimentos e hábitos de consumo.' },
+                'transactions': { title: 'Gestão de Transações', sub: 'Histórico completo de entradas, saídas e controle de lançamentos.' },
+                'open-finance': { title: 'Open Finance & Dados', sub: 'Conexão bancária automatizada e importador inteligente de planilhas.' },
+                'goals': { title: 'Metas & Planejamento', sub: 'Acompanhamento do progresso financeiro e limites orçamentários.' }
+            };
+
+            if (titleMap[tabId]) {
+                document.getElementById('page-title').textContent = titleMap[tabId].title;
+                document.getElementById('page-subtitle').textContent = titleMap[tabId].sub;
+            }
+        }
+
+        // ==========================================
+        // KPIS AND CALCULATIONS
+        // ==========================================
+        function renderKPIs() {
+            let totalIncome = 0;
+            let totalExpenses = 0;
+
+            mockTransactions.forEach(tx => {
+                if (tx.type === 'INCOME') totalIncome += tx.amount;
+                if (tx.type === 'EXPENSE') totalExpenses += tx.amount;
+            });
+
+            const totalBalance = totalIncome - totalExpenses;
+
+            document.getElementById('kpi-balance').textContent = formatCurrency(totalBalance);
+            document.getElementById('kpi-income').textContent = formatCurrency(totalIncome);
+            document.getElementById('kpi-expenses').textContent = formatCurrency(totalExpenses);
+        }
+
+        function formatCurrency(val) {
+            return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // ==========================================
+        // CHARTS SETUP (CHART.JS)
+        // ==========================================
+        function initCharts() {
+            // Chart 1: Cash Flow (Bar / Line Combo)
+            const ctxFlow = document.getElementById('chartCashFlow').getContext('2d');
+            chartCashFlowInstance = new Chart(ctxFlow, {
+                type: 'bar',
+                data: {
+                    labels: ['Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'],
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: [7200, 7500, 8000, 7800, 8200, 9700],
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Despesas',
+                            data: [4800, 5100, 4900, 5300, 5000, 4982],
+                            backgroundColor: 'rgba(244, 63, 94, 0.85)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#9CA3AF', font: { family: 'Inter' } } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#9CA3AF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } }
+                    }
+                }
+            });
+
+            // Chart 2: Category Doughnut
+            const ctxCat = document.getElementById('chartCategories').getContext('2d');
+            chartCategoriesInstance = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Moradia', 'Alimentação', 'Transporte', 'Lazer', 'Saúde', 'Outros'],
+                    datasets: [{
+                        data: [2200, 642.50, 220, 185, 250, 1485],
+                        backgroundColor: [
+                            '#8B5CF6',
+                            '#06B6D4',
+                            '#F59E0B',
+                            '#F43F5E',
+                            '#10B981',
+                            '#6B7280'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#9CA3AF', font: { family: 'Inter', size: 11 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Chart 3: Patrimony Line
+            const ctxPatrimony = document.getElementById('chartPatrimony').getContext('2d');
+            chartPatrimonyInstance = new Chart(ctxPatrimony, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'],
+                    datasets: [{
+                        label: 'Patrimônio Total (R$)',
+                        data: [15000, 16800, 18200, 19500, 21000, 22800, 24100, 25900, 27300, 33217.50],
+                        borderColor: '#06B6D4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#06B6D4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#9CA3AF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } }
+                    }
+                }
+            });
+        }
+
+        function updateChartsData() {
+            // Re-calculate category totals dynamically from transactions
+            const catTotals = {
+                Moradia: 0, Alimentação: 0, Transporte: 0, Lazer: 0, Saúde: 0, Outros: 0
+            };
+
+            mockTransactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+                if (catTotals.hasOwnProperty(t.category)) {
+                    catTotals[t.category] += t.amount;
+                } else {
+                    catTotals['Outros'] += t.amount;
+                }
+            });
+
+            if (chartCategoriesInstance) {
+                chartCategoriesInstance.data.datasets[0].data = Object.values(catTotals);
+                chartCategoriesInstance.update();
+            }
+        }
+
+        // ==========================================
+        // TRANSACTIONS MANAGEMENT
+        // ==========================================
+        function renderTransactionsTable(filteredList = null) {
+            const list = filteredList || mockTransactions;
+            const tbody = document.getElementById('transactions-table-body');
+            const emptyState = document.getElementById('tx-empty-state');
+
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            list.forEach(tx => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-800/40 transition';
+
+                const isIncome = tx.type === 'INCOME';
+                const typeBadge = isIncome 
+                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Receita</span>`
+                    : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">Despesa</span>`;
+
+                const amountFormatted = (isIncome ? '+ ' : '- ') + formatCurrency(tx.amount);
+                const amountClass = isIncome ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold';
+
+                tr.innerHTML = `
+                    <td class="p-4 text-gray-400 text-xs">${formatDate(tx.date)}</td>
+                    <td class="p-4 font-medium text-gray-200">${escapeHtml(tx.description)}</td>
+                    <td class="p-4 text-gray-400"><span class="px-2 py-1 bg-gray-800 rounded-lg text-xs border border-gray-700">${tx.category}</span></td>
+                    <td class="p-4">${typeBadge}</td>
+                    <td class="p-4 text-right ${amountClass}">${amountFormatted}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteTransaction('${tx.id}')" class="text-gray-500 hover:text-rose-400 transition px-2 py-1" title="Excluir">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderRecentTransactions() {
+            const container = document.getElementById('recent-transactions-list');
+            container.innerHTML = '';
+
+            const recent = mockTransactions.slice(0, 5);
+            recent.forEach(tx => {
+                const isIncome = tx.type === 'INCOME';
+                const icon = isIncome ? 'fa-arrow-down-left text-emerald-400' : 'fa-arrow-up-right text-rose-400';
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2.5 rounded-xl bg-dark-900/60 border border-gray-800/80';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-xs">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-200 truncate w-32">${escapeHtml(tx.description)}</p>
+                            <p class="text-[10px] text-gray-500">${tx.category}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold ${isIncome ? 'text-emerald-400' : 'text-gray-300'}">
+                        ${isIncome ? '+' : '-'} ${formatCurrency(tx.amount)}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function applyTransactionFilters() {
+            const searchVal = document.getElementById('tx-search').value.toLowerCase();
+            const typeVal = document.getElementById('tx-filter-type').value;
+            const categoryVal = document.getElementById('tx-filter-category').value;
+
+            const filtered = mockTransactions.filter(tx => {
+                const matchesSearch = tx.description.toLowerCase().includes(searchVal) || tx.category.toLowerCase().includes(searchVal);
+                const matchesType = (typeVal === 'ALL') || (tx.type === typeVal);
+                const matchesCat = (categoryVal === 'ALL') || (tx.category === categoryVal);
+
+                return matchesSearch && matchesType && matchesCat;
+            });
+
+            renderTransactionsTable(filtered);
+        }
+
+        function openTransactionModal() {
+            document.getElementById('modal-transaction').classList.remove('hidden');
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('modal-transaction').classList.add('hidden');
+            document.getElementById('tx-form').reset();
+            document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function saveTransaction(e) {
+            e.preventDefault();
+
+            const desc = document.getElementById('form-desc').value;
+            const amount = parseFloat(document.getElementById('form-amount').value);
+            const type = document.getElementById('form-type').value;
+            const category = document.getElementById('form-category').value;
+            const date = document.getElementById('form-date').value;
+
+            const newTx = {
+                id: Date.now().toString(),
+                description: desc,
+                amount: amount,
+                type: type,
+                category: category,
+                date: date
+            };
+
+            mockTransactions.unshift(newTx);
+            
+            renderAll();
+            updateChartsData();
+            closeTransactionModal();
+            showToast('Transação adicionada com sucesso!', 'success');
+        }
+
+        function deleteTransaction(id) {
+            mockTransactions = mockTransactions.filter(t => t.id !== id);
+            renderAll();
+            updateChartsData();
+            showToast('Transação removida.', 'info');
+        }
+
+        // ==========================================
+        // OPEN FINANCE SIMULATION
+        // ==========================================
+        function renderBanksGrid() {
+            const container = document.getElementById('banks-grid');
+            container.innerHTML = '';
+
+            mockBanks.forEach(bank => {
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border transition flex flex-col justify-between ${
+                    bank.connected ? 'bg-dark-900/80 border-emerald-500/30' : 'bg-dark-900/30 border-gray-800 hover:border-gray-700'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid ${bank.logo} ${bank.color} text-xl"></i>
+                            <span class="text-sm font-semibold text-gray-200">${bank.name}</span>
+                        </div>
+                        <span class="w-2.5 h-2.5 rounded-full ${bank.connected ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-gray-600'}"></span>
+                    </div>
+
+                    <div class="text-[11px] text-gray-500 mb-3">
+                        Status: <span class="${bank.connected ? 'text-emerald-400 font-medium' : 'text-gray-400'}">${bank.connected ? 'Sincronizado' : 'Não conectado'}</span>
+                        <br>Última sync: ${bank.lastSync}
+                    </div>
+
+                    <button onclick="toggleBankConnection('${bank.id}')" id="btn-bank-${bank.id}" class="w-full py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
+                        bank.connected 
+                            ? 'bg-gray-800 hover:bg-gray-700 text-rose-400 border border-gray-700' 
+                            : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    }">
+                        ${bank.connected ? '<i class="fa-solid fa-unlink"></i> Desconectar' : '<i class="fa-solid fa-link"></i> Conectar Banco'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleBankConnection(bankId) {
+            const bank = mockBanks.find(b => b.id === bankId);
+            if (!bank) return;
+
+            const btn = document.getElementById(`btn-bank-${bankId}`);
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch spin-sync"></i> Conectando...`;
+
+            setTimeout(() => {
+                bank.connected = !bank.connected;
+                bank.lastSync = bank.connected ? 'Agora mesmo' : 'Nunca';
+                renderBanksGrid();
+                showToast(bank.connected ? `Open Finance: ${bank.name} conectado!` : `${bank.name} desconectado.`, bank.connected ? 'success' : 'info');
+            }, 1000);
+        }
+
+        function simulateSyncAll() {
+            const icon = document.getElementById('sync-all-icon');
+            icon.classList.add('spin-sync');
+
+            setTimeout(() => {
+                icon.classList.remove('spin-sync');
+                mockBanks.forEach(b => {
+                    if (b.connected) b.lastSync = 'Agora mesmo';
+                });
+                renderBanksGrid();
+                showToast('Todos os bancos conectados foram sincronizados!', 'success');
+            }, 1500);
+        }
+
+        // ==========================================
+        // SHEET & CSV IMPORT SYSTEM
+        // ==========================================
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileExt = file.name.split('.').pop().toLowerCase();
+
+            if (fileExt === 'csv') {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        processImportedRows(results.data);
+                    }
+                });
+            } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    processImportedRows(json);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                showToast('Formato de arquivo inválido. Use CSV ou Excel.', 'error');
+            }
+        }
+
+        function processImportedRows(rows) {
+            if (!rows || rows.length === 0) {
+                showToast('O arquivo selecionado está vazio.', 'error');
+                return;
+            }
+
+            parsedImportData = rows.map((row, index) => {
+                // Smart mapping for common Brazilian spreadsheet headers
+                const desc = row['Descrição'] || row['Descricao'] || row['Historico'] || row['description'] || `Lançamento ${index + 1}`;
+                const amount = parseFloat(row['Valor'] || row['valor'] || row['amount'] || 100);
+                const category = row['Categoria'] || row['category'] || 'Outros';
+                const type = (row['Tipo'] || row['type'] || 'EXPENSE').toString().toUpperCase().includes('REC') ? 'INCOME' : 'EXPENSE';
+                const date = row['Data'] || row['data'] || new Date().toISOString().split('T')[0];
+
+                return {
+                    id: 'imp-' + Date.now() + '-' + index,
+                    description: desc,
+                    amount: Math.abs(amount),
+                    category: category,
+                    type: type,
+                    date: date
+                };
+            });
+
+            // Show Preview UI
+            document.getElementById('import-preview-container').classList.remove('hidden');
+            document.getElementById('preview-row-count').textContent = `${parsedImportData.length} registros encontrados`;
+            document.getElementById('preview-sample').textContent = JSON.stringify(parsedImportData[0], null, 2);
+            showToast('Planilha pré-processada com sucesso!', 'success');
+        }
+
+        function confirmImportData() {
+            if (!parsedImportData || parsedImportData.length === 0) return;
+
+            mockTransactions = [...parsedImportData, ...mockTransactions];
+            renderAll();
+            updateChartsData();
+
+            document.getElementById('import-preview-container').classList.add('hidden');
+            document.getElementById('file-input').value = '';
+            parsedImportData = null;
+
+            showToast('Transações importadas e integradas ao dashboard!', 'success');
+        }
+
+        // ==========================================
+        // EXPORT DATA (CSV & JSON)
+        // ==========================================
+        function exportData(format) {
+            if (format === 'json') {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mockTransactions, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `lumina_financas_backup_${new Date().toISOString().split('T')[0]}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            } else if (format === 'csv') {
+                const csv = Papa.unparse(mockTransactions);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `lumina_financas_relatorio_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            showToast(`Exportação ${format.toUpperCase()} iniciada!`, 'success');
+        }
+
+        // ==========================================
+        // GOALS AND BUDGETS RENDER
+        // ==========================================
+        function renderGoals() {
+            const container = document.getElementById('goals-list');
+            container.innerHTML = '';
+
+            mockGoals.forEach(goal => {
+                const percent = Math.min(Math.round((goal.current / goal.target) * 100), 100);
+                const card = document.createElement('div');
+                card.className = 'glass-card p-5 rounded-2xl space-y-3';
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-${goal.color}-500/10 text-${goal.color}-400 flex items-center justify-center">
+                                <i class="fa-solid ${goal.icon} text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-white">${goal.title}</h4>
+                                <p class="text-xs text-gray-400">Meta: ${formatCurrency(goal.target)}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-${goal.color}-400">${percent}%</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-400 to-cyan-400 h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                    </div>
+
+                    <div class="flex justify-between text-xs text-gray-400 pt-1">
+                        <span>Acumulado: <strong class="text-gray-200">${formatCurrency(goal.current)}</strong></span>
+                        <span>Falta: ${formatCurrency(goal.target - goal.current)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderBudgets() {
+            const container = document.getElementById('budgets-list');
+            container.innerHTML = '';
+
+            mockBudgets.forEach(b => {
+                const percent = Math.round((b.spent / b.limit) * 100);
+                const isOver = b.spent > b.limit;
+                const barColor = isOver ? 'bg-rose-500' : (percent > 80 ? 'bg-amber-500' : 'bg-emerald-500');
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border ${isOver ? 'bg-rose-500/5 border-rose-500/30' : 'bg-dark-900/60 border-gray-800'} space-y-2`;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-gray-200 flex items-center gap-1.5">
+                            ${b.category}
+                            ${isOver ? '<span class="text-[10px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded font-bold">ESTOURADO</span>' : ''}
+                        </span>
+                        <span class="text-gray-400">${formatCurrency(b.spent)} / <span class="text-gray-300 font-medium">${formatCurrency(b.limit)}</span></span>
+                    </div>
+
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                        <div class="${barColor} h-full transition-all duration-500" style="width: ${Math.min(percent, 100)}%"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // UTILS & HELPERS
+        // ==========================================
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' ? 'bg-emerald-500 text-dark-900' : (type === 'error' ? 'bg-rose-500 text-white' : 'bg-gray-800 text-gray-200 border border-gray-700');
+
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
